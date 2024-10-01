@@ -1,6 +1,6 @@
 BSD 3-CLause License
 
-Copyright © 2024, Triad National Security, LLC All rights reserved.
+Copyright 2024, Triad National Security, LLC. All rights reserved.
 
 This program is Open-Source under the BSD-3 License.
 
