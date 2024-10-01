@@ -16,3 +16,6 @@ hFlux -- lightweight toolkit for tokamak simulation code diagnostics.
 ## Required
 
 ## Optional (enabling features)
+
+# Release
+O4754 hFlux was approved for Open-Source Assertion
