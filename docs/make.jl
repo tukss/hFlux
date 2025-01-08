@@ -1,6 +1,6 @@
 using Pkg
 using Documenter
-
+cd(@__DIR__)
 makedocs(
   sitename="hFlux",
   authors = "Oleksii Beznosov",
