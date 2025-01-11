@@ -6,8 +6,25 @@ const lib = joinpath(@__DIR__, "..", "build", "lib", "libhFlux.so")
 function test()
     @ccall lib.test()::Cint 
 end
-function printLib()
-    print(lib, "\n")
+
+function initialize()
+    @ccall lib.initialize()::Cvoid 
+end
+
+function setRaFieldData()
+    @ccall lib.initialize()::Cvoid 
+end
+
+function interpolate()
+    @ccall lib.interpolate()::Cvoid 
+end
+
+function evaluate()
+    @ccall lib.evaluate()::Cvoid 
+end
+
+function plotPoincareSection()
+    @ccall lib.plotPoincareSection()::Cvoid 
 end
 
 end
