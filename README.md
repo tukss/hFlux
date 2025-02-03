@@ -12,10 +12,5 @@ hFlux -- lightweight toolkit for tokamak simulation code diagnostics.
 * Field line calculations, supporting Poincare plot data output.
 * C/C++ interface, Python and Julia Wrappers.
 
-# Dependecies
-## Required
-
-## Optional (enabling features)
-
 # Release
 O4754 hFlux was approved for Open-Source Assertion
