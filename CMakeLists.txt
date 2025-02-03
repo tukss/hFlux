@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 project(hFlux)
 
 # Set the C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Specify the source files (all .cpp files in the src folder)
@@ -14,6 +14,7 @@ file(GLOB SOURCES "src/*.cpp")
 add_library(hFlux SHARED ${SOURCES})
 
 # Include the headers directory for the library
+target_include_directories(hFlux PRIVATE "external/mdspan/include/mdspan")
 target_include_directories(hFlux PUBLIC "src")
 
 # Optionally set the output directory for the shared library

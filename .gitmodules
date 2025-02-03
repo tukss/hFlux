@@ -1,0 +1,3 @@
+[submodule "external/mdspan"]
+	path = external/mdspan
+	url = git@github.com:kokkos/mdspan.git

@@ -1,6 +1,5 @@
 module hFlux
 
-
 const lib = joinpath(@__DIR__, "..", "build", "lib", "libhFlux.so")
 # Define Julia functions that wrap library calls
 function test()
@@ -11,8 +10,8 @@ function initialize()
     @ccall lib.initialize()::Cvoid 
 end
 
-function setRaFieldData()
-    @ccall lib.initialize()::Cvoid 
+function setRawFieldData()
+    @ccall lib.setRawFieldData()::Cvoid 
 end
 
 function interpolate()
