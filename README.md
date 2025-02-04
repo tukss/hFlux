@@ -25,7 +25,7 @@ You can verify your CMake version by running `cmake --version`. Make sure your c
 ~$ cmake -Bbuild
 ~$ cd build; make
 ```
-Now you can access dynemic library through Julia interface. Coherent C, C++ and python interfaces are in the works
+Now you can access library through Julia interface. Coherent C, C++ and python interfaces are in the works
 
 
 # Release
