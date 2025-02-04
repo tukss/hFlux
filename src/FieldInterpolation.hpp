@@ -5,7 +5,7 @@
 #include "common.hpp"
 #include "mdspan.hpp"
 
-namespace vw = std::views;
+namespace vw=std::ranges::views;
 namespace stdex = Kokkos;
 
 namespace FiniteDifferenceTable {
@@ -42,35 +42,15 @@ template<int STENCIL_RADIUS, int M>
 class FieldInterpolation
 {
     public:
-        FieldInterpolation(const IntDim2 N_, const Dim2 x0_, const Dim2 d_);
+        FieldInterpolation(const IntDim2 N_, const Dim2 x0_, const Dim2 d_, const int nmodes = 0);
         ~FieldInterpolation(){};
         void setRawGridData(const Vector& data);
+        void setRawGridData(const Real* data);
         double* getRawFieldGridDataPtr();
         void readRawGridData(std::string dataset_name, std::string filaname = "../../InitialData/input.h5");
         void updateJre();
-
         void interpolate();
-        void operator()(Dim6& B, Dim6& dBdR, Dim6& dBdZ,
-                        Dim6& E,
-                        const Dim2& X);
-        void operator()(Dim6& B, Dim6& dBdR, Dim6& dBdZ,
-                        Dim6& E,
-                        Dim6& V,
-                        Dim2& Psi,
-                        const Dim2& X);
-        void operator()(Vector& B, Vector& dBdR, Vector& dBdZ,
-                        Vector& E,
-                        const Vector& X);
-        ERROR_CODE operator()(Vector& B, Vector& curlB, Vector& dBdR, Vector& dBdZ,
-                        Vector& E,
-                        Vector& V,
-                        Vector& Psi,
-                        const Vector& X);
-        ERROR_CODE analytic(Vector& B, Vector& curlB, Vector& dBdR, Vector& dBdZ,
-                        Vector& E,
-                        Vector& V,
-                        Vector& Psi,
-                        const Vector& X);
+
         template<size_t Xdim>
         ERROR_CODE getFDIndex(const std::array<Real, Xdim>& X, int& index, Dim2& loc);
         template<size_t Xdim>
@@ -80,14 +60,9 @@ class FieldInterpolation
 
         void curlB(std::array<Real,6>& curlB_, const std::array<Real, 2>& X);
         template <class T>
-        ERROR_CODE evalDiv0Fields(Dim3& B, Dim3& curlB, Dim3& dBdR, Dim3& dBdZ, Dim3& E, const T& X, const Real& t);
-        template <class T>
-        ERROR_CODE evalBFourier(Dim3& B, const T& X, const Real& t);
-        template <class T>
-        ERROR_CODE evalVJre(Dim3& V, Dim3& Jre, const T& X, const Real& t);
+        ERROR_CODE evalB(Dim3& B, const T& X, const Real& psi);
         template <class T>
         ERROR_CODE evalPsi(Real& Psi, const T& X, const Real& t);
-        void setTimeFrame(const Real& tl_, const Real& tr_);
 
         ERROR_CODE plot();
         ERROR_CODE plotAnalyticFields();
@@ -96,47 +71,34 @@ class FieldInterpolation
         void checkDims() const;
 
         static constexpr int dim_in = 2;  // R , Z
-        #ifdef FOURIER
-        static constexpr int dim_time = 9;  // t begin t end
-        #else // NOT FOURIER
-        static constexpr int dim_time = 2;  // t begin t end
-        #endif
         static constexpr int dim_out = 3; // R , phi , Z
-        static constexpr int nFields = 4; // B, gradB, V, E
+        static constexpr int nFields = 1; // B
         static constexpr IntDim2 m{M,M};
         static constexpr IntDim2 nDoF{2*m[0]+2, 2*m[1]+2};
         static constexpr IntDim2 Npl{400, 800};
 
 
-        using gridDataExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nFields, dim_out, dim_time>;
+        using gridDataExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nFields, dim_out, std::dynamic_extent>;
         using gridDataMDSpan = stdex::mdspan<Real, gridDataExtents>;
-        using hermiteDataExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nDoF[0], nDoF[1], nFields, dim_out, dim_time>;
+        using hermiteDataExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nDoF[0], nDoF[1], nFields, dim_out, std::dynamic_extent>;
         using hermiteDataMDSpan = stdex::mdspan<Real, hermiteDataExtents>;
-        using psiExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nDoF[0]+1, nDoF[1]+1, dim_time>;
+        using psiExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nDoF[0]+1, nDoF[1]+1, std::dynamic_extent>;
         using psiMDSpan = stdex::mdspan<Real, psiExtents>;
-        using FExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nDoF[0], nDoF[1]+1, 3, dim_out, dim_time>; // B, V, J_re
+        using FExtents = stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nDoF[0], nDoF[1]+1, 3, dim_out, std::dynamic_extent>;
         using FMDSpan = stdex::mdspan<Real, FExtents>;
-        using levelMDSpan = stdex::mdspan<int, stdex::extents<int, std::dynamic_extent, std::dynamic_extent>>;
-        using jreMDSpan  = stdex::mdspan<Real, stdex::extents<int, std::dynamic_extent, std::dynamic_extent, 1, 3, 1>>;
-        using hermiteJreMDSpan  = stdex::mdspan<Real, stdex::extents<int, std::dynamic_extent, std::dynamic_extent, nDoF[0], nDoF[1], 1, 3, 1>>;
 
         static constexpr int FCellSize = FExtents::static_extent(2) * FExtents::static_extent(3) * FExtents::static_extent(4) * FExtents::static_extent(5) * FExtents::static_extent(6);
         static constexpr int psiCellSize = psiExtents::static_extent(2) * psiExtents::static_extent(3) * psiExtents::static_extent(4);
 
         IntDim2 N;
-        Dim2 d; 
+	int nmodes;
+        Dim2 d;// 
         Dim2 x0fd, x0, h;
         IntDim2 nCells;
 
         Vector rawHermiteData, rawPsi, rawF;
-        std::vector<int> rawLevel; 
-        Vector rawJre;
-        
-        Real tl, tr;
-
-        #ifdef FOURIER
         Vector rawChi;
-        #endif
+        
     private:
         template<class fdDataMDS, class hDataMDS>
         void computeDerivatives(Vector& grid, Vector& hermite);
@@ -145,154 +107,13 @@ class FieldInterpolation
         void computeFlux(Vector& raw, int intZsource = 0, bool doLineRIntegration = true);
         void computeBZ();
         void assemble();
-        void assembleJRE();
-        void readLevelFile();
 
         Vector rawGridData;
-    public:
-        int PlotCounter;
-};
-
-struct TimeInterpolation
-{ 
-    Real c1, c2;
-    TimeInterpolation(const Real& ta, const Real& tb, const Real& t):
-    c1((tb - t)/(tb - ta)),
-    c2((t - ta)/(tb - ta)){}
-    Real operator()(const Real& a, const Real& b){
-      if constexpr (Flags::TimeInterpolation) return c1*a + c2*b;
-      return a;
-    }
- 
 };
 
 template<int STENCIL_RADIUS, int M>
 template <class T>
-ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalDiv0Fields(Dim3& B, Dim3& curlB, Dim3& dBdR, Dim3& dBdZ, Dim3& E, const T& X, const Real& t)
-{
-    B = {}; dBdR = {}; dBdZ = {}; E = {}; curlB = {};
-    Dim2 Xloc{}; 
-    int index = -1; 
-    ERROR_CODE ret = getHermiteIndex(X, index, Xloc);
-    if (ret != SUCCESS){
-      printf("Error out of bounds!\n");
-      return ret;
-    } 
-
-    TimeInterpolation ti(tl, tr, t);
-
-    auto F = stdex::mdspan(rawF.data() + index * FCellSize, 
-                           FExtents::static_extent(2), FExtents::static_extent(3), FExtents::static_extent(4), FExtents::static_extent(5), FExtents::static_extent(6));
-    
-    Dim3 V = {}, J_re = {};
-
-    Real sclr = 1.0;
-    for (int i = 0; i < static_cast<int>(F.extent(0)); ++i) {
-        Real sclz = 1.0;
-        for (int j = 0; j < static_cast<int>(F.extent(1)); ++j) {
-            Real mon = sclr * sclz;
-            for (int k = 0; k < 3; ++k) {
-                B[k] += ti(F(i,j,0,k,0), F(i,j,0,k,1)) * mon;
-                if (i+1 < F.extent(0)) dBdR[k] += static_cast<Real>(i+1) * ti(F(i+1,j,0,k,0), F(i+1,j,0,k,1)) * mon;
-                if (j+1 < F.extent(1)) dBdZ[k] += static_cast<Real>(j+1) * ti(F(i,j+1,0,k,0), F(i,j+1,0,k,1)) * mon;
-
-                V[k] += ti(F(i,j,1,k,0), F(i,j,1,k,1)) * mon;
-                J_re[k] += F(i,j,2,k,0) * mon;
-            }
-            sclz *= Xloc[1];
-        }
-        sclr *= Xloc[0];
-    }
-
-    const Real& XR = getR(X);
- 
-    std::transform(B.begin(), B.end(), B.begin(),
-               std::bind(std::divides(), std::placeholders::_1, XR));
-    curlB[2] = dBdR[1] / XR / h[0];
-
-    std::transform(dBdR.begin(), dBdR.end(), B.begin(), dBdR.begin(), [&](Real& a, Real& b){
-        return (a / h[0] - b) / XR;
-    });
-
-    std::transform(dBdZ.begin(), dBdZ.end(), dBdZ.begin(),
-               std::bind(std::divides(), std::placeholders::_1, XR * h[1]));
-
-    curlB[0] = -dBdZ[1];
-    curlB[1] = dBdZ[0] - dBdR[2];
-    cross_product(B,V,E);
-    // E = - VxB + \eta / mu0 (\nabla x B - muJre)
-//    for (auto k: vw::iota(0,3))
-//      E[k]   = PhysicalParameters::E_n * (E[k] + PhysicalParameters::eta_mu0aVa*(curlB[k]) - J_re[k]);
-
-    return ERROR_CODE::SUCCESS;
-}
-
-template<int STENCIL_RADIUS, int M>
-template <class T>
-ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalVJre(Dim3& V, Dim3& J_re, const T& X, const Real& t)
-{
-    V = {}; J_re = {};
-    Dim2 Xloc{}; 
-    int index = -1; 
-    ERROR_CODE ret = getHermiteIndex(X, index, Xloc);
-    if (ret != SUCCESS) return ret;
-
-    TimeInterpolation ti(tl, tr, t);
-
-    auto F = stdex::mdspan(rawF.data() + index * FCellSize, 
-                           FExtents::static_extent(2), FExtents::static_extent(3), FExtents::static_extent(4), FExtents::static_extent(5), FExtents::static_extent(6));
-
-    Real sclr = 1.0;
-    for (auto i : vw::iota(0, static_cast<int>(F.extent(0))))
-    {
-        Real sclz = 1.0;
-        for (auto j : vw::iota(0, static_cast<int>(F.extent(1))))
-        {
-            Real mon = sclr * sclz;
-            for (auto k: vw::iota(0,3))
-            {
-                V[k] += ti(F(i,j,1,k,0), F(i,j,1,k,1)) * mon;
-                J_re[k] += F(i,j,2,k,0) * mon;
-            }
-            sclz *= Xloc[1];
-        }
-        sclr *= Xloc[0];
-    }
-
-    return ERROR_CODE::SUCCESS;
-}
-
-template<int STENCIL_RADIUS, int M>
-template<class T>
-ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalPsi(Real& Psi, const T& X, const Real& t)
-{
-    Dim2 Xloc; int index; 
-    Psi = 0.0;
-    ERROR_CODE ret = getHermiteIndex(X, index, Xloc);
-    if (ret != SUCCESS) return ret;
-
-    TimeInterpolation ti(tl, tr, t);
-
-    auto psi = stdex::mdspan(rawPsi.data() + index * psiCellSize, psiExtents::static_extent(2), psiExtents::static_extent(3), psiExtents::static_extent(4));
-
-    Real sclr = 1.0;
-    for (auto i : vw::iota(0, static_cast<int>(psi.extent(0)))){
-        Real sclz = 1.0;
-        for (auto j : vw::iota(0, static_cast<int>(psi.extent(1)))){
-            Real mon = sclr * sclz;
-            Psi += ti(psi(i,j,0),psi(i,j,1)) * mon;
-            sclz *= Xloc[1];
-        }
-        sclr *= Xloc[0];
-    }
-
-    return SUCCESS;
-}
-
-#ifdef FOURIER
-template<int STENCIL_RADIUS, int M>
-template <class T>
-ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalBFourier(Dim3& B, const T& X, const Real& t)
+ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalB(Dim3& B, const T& X, const Real& phi)
 {
     B = {}; 
     Dim2 Xloc{}; 
@@ -305,7 +126,7 @@ ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalBFourier(Dim3& B, const T& 
     auto F = stdex::mdspan(rawF.data() + index * FCellSize, 
                            FExtents::static_extent(2), FExtents::static_extent(3), FExtents::static_extent(4), FExtents::static_extent(5), FExtents::static_extent(6));
     auto chi = stdex::mdspan(rawChi.data() + index * psiCellSize, psiExtents::static_extent(2), psiExtents::static_extent(3), psiExtents::static_extent(4));
-    const Real& XR = getR(X);
+    const Real XR = getR(X);
     
     Real sclr = 1.0;
     for (int i = 0; i < static_cast<int>(F.extent(0)); ++i) {
@@ -314,9 +135,9 @@ ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalBFourier(Dim3& B, const T& 
             Real mon = sclr * sclz;
             for (int k = 0; k < 3; ++k) {
                 B[k] += F(i,j,0,k,0) * mon;
-                for (int kk = 1; kk < 5; ++kk) {
-                  B[k] += F(i,j,0,k,kk) * mon * cos(kk * t);
-                  B[k] -= F(i,j,0,k,kk+4) * mon * sin(kk * t);
+                for (int kk = 1; kk < nmodes; ++kk) {
+                  B[k] += F(i,j,0,k,kk) * mon * cos(kk * phi);
+                  B[k] -= F(i,j,0,k,kk+4) * mon * sin(kk * phi);
                 }
             }
             sclz *= Xloc[1];
@@ -330,8 +151,8 @@ ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalBFourier(Dim3& B, const T& 
         for (auto j : vw::iota(0, static_cast<int>(chi.extent(1)))){
             Real mon = sclr * sclz;
             for (int kk = 1; kk < 5; ++kk) {
-                B[2] += chi(i, j, kk) * mon * sin(kk * t) * kk / XR;
-                B[2] += chi(i, j, kk + 4) * mon * cos(kk * t) * kk / XR;
+                B[2] += chi(i, j, kk) * mon * sin(kk * phi) * kk / XR;
+                B[2] += chi(i, j, kk + 4) * mon * cos(kk * phi) * kk / XR;
             }
             sclz *= Xloc[1];
         }
@@ -344,12 +165,10 @@ ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalBFourier(Dim3& B, const T& 
 
     return ERROR_CODE::SUCCESS;
 }
- #endif
 
-#ifdef FOURIER
 template<int STENCIL_RADIUS, int M>
 template <class T>
-ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalPsiFourier(Real& Psi, const T& X, const Real& t)
+ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalPsi(Real& Psi, const T& X, const Real& t)
 {
     Dim2 Xloc; int index; 
     Psi = 0.0;
@@ -375,7 +194,6 @@ ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::evalPsiFourier(Real& Psi, const
 
     return SUCCESS;
 }
-#endif
 
 
 
@@ -427,12 +245,6 @@ template<size_t Xdim>
 ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::checkWall(const std::array<Real, Xdim>& X) {
     int i; Dim2 loc;
     auto ret = getFDIndex(X, i, loc);
-    if (rawLevel[i] < 0) {
-        return ERROR_CODE::BEYOND_FIRST_WALL;
-    } 
-    else if (rawLevel[i] < 1) {
-        return ERROR_CODE::WALL_IMPACT;
-    }
     return SUCCESS;
 }
 
@@ -589,26 +401,21 @@ void linspace(T& v, const Real& a, const Real& w)
 }
 
 template<int STENCIL_RADIUS, int M>
-FieldInterpolation<STENCIL_RADIUS,M>::FieldInterpolation(const IntDim2 N_, const Dim2 x0_, const Dim2 d_):
+FieldInterpolation<STENCIL_RADIUS,M>::FieldInterpolation(const IntDim2 N_, const Dim2 x0_, const Dim2 d_, int nmodes):
   N(N_),
+  nmodes(nmodes),
   d(d_),
   x0fd(x0_),
   x0({x0_[0] + STENCIL_RADIUS * d[0], x0_[1] + STENCIL_RADIUS * d[1]}),
   h({STENCIL_RADIUS * 2 * d[0], STENCIL_RADIUS * 2 * d[1]}),
   nCells({(N[0]-1) / (2* STENCIL_RADIUS)-1, (N[1]-1) / (2*STENCIL_RADIUS)-1}),
-  rawHermiteData(nCells[0] * nCells[1] * nDoF[0] * nDoF[1] * 12 * dim_time, 0.0),
-  rawPsi(nCells[0] * nCells[1] * (nDoF[0]+1) * (nDoF[1]+1) * dim_time, 0.0),
-  rawF(nCells[0] * nCells[1] * nDoF[0] * (nDoF[1]+1) * 9 * dim_time, 0.0),
-  rawLevel(N[0] * N[1], 0),
-  rawJre((N[0]) * (N[1]) * 1*3*1),
-  tl(0.0), tr(1.0),
-  rawGridData((N[0]) * (N[1]) * nFields*dim_out*dim_time, 0.0),
-  PlotCounter(0)
-  #ifdef FOURIER
-  ,rawChi(nCells[0] * nCells[1] * (nDoF[0]+1) * (nDoF[1]+1) * dim_time, 0.0)
-  #endif
+  rawHermiteData(nCells[0] * nCells[1] * nDoF[0] * nDoF[1] * nFields * dim_out * (2*nmodes-1), 0.0),
+  rawPsi(nCells[0] * nCells[1] * (nDoF[0]+1) * (nDoF[1]+1) * (2*nmodes-1), 0.0),
+  rawF(nCells[0] * nCells[1] * nDoF[0] * (nDoF[1]+1) * 9 * 2*(nmodes-1), 0.0),
+  rawGridData((N[0]) * (N[1]) * nFields*dim_out*(2*nmodes-1), 0.0),
+  rawChi(nCells[0] * nCells[1] * (nDoF[0]+1) * (nDoF[1]+1) * (2*nmodes-1), 0.0)
 {
-  readLevelFile();
+//  readLevelFile();
 }
 
 template<int STENCIL_RADIUS, int M>
@@ -616,6 +423,13 @@ void FieldInterpolation<STENCIL_RADIUS,M>::setRawGridData(const Vector& data)
 {
   rawGridData.assign(data.begin(), data.end());
 }
+
+template<int STENCIL_RADIUS, int M>
+void FieldInterpolation<STENCIL_RADIUS,M>::setRawGridData(const Real* data)
+{
+  rawGridData.assign(data, data + rawGridData.size());
+}
+
 
 template<int STENCIL_RADIUS, int M>
 Real* FieldInterpolation<STENCIL_RADIUS,M>::getRawFieldGridDataPtr() {
@@ -634,26 +448,8 @@ void FieldInterpolation<STENCIL_RADIUS,M>::interpolate()
   assemble();
   computeBZ();
   computeFlux(rawPsi);
-  #ifdef FOURIER
-  computeFlux(rawChi, 2, false);
-  #endif
+  if (nmodes > 1) computeFlux(rawChi, 2, false);
 }
-
-template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::updateJre()
-{
-  computeDerivatives<jreMDSpan, hermiteJreMDSpan>(rawJre, rawHermiteData);
-  interpolateHermite<hermiteJreMDSpan>(rawHermiteData);
-  assembleJRE();
-}
-
-
-template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::checkDims() const
-{
-}
-
-
 
 template<int STENCIL_RADIUS, int M>
 void FieldInterpolation<STENCIL_RADIUS,M>::computeFlux(Vector& raw, int intZsource, bool doLineRIntegration)
@@ -665,7 +461,7 @@ void FieldInterpolation<STENCIL_RADIUS,M>::computeFlux(Vector& raw, int intZsour
   const IntDim2 ic = {(nCells[0])/2, (nCells[1])/2};
 
 
-  for (auto k: vw::iota(0, dim_time))
+  for (auto k: vw::iota(0, 2*nmodes-1))
   {
     for (auto iR: vw::iota(0, nCells[0]))
     {
@@ -796,195 +592,12 @@ void FieldInterpolation<STENCIL_RADIUS,M>::computeFlux(Vector& raw, int intZsour
 
 
 template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::operator()(Dim6& B,
-                                    Dim6& dBdR,
-                                    Dim6& dBdZ,
-                                    Dim6& E,
-                              const Dim2& X)
-{
-  // int ii = std::floor(X[0]/h[0]);
-  // Real lc0 = X[0]/h[0] - ii - 0.5;
-  // int jj = std::floor(X[1]/h[1]);
-  // Real lc1 = X[1]/h[1] - jj - 0.5;
-  // for(auto& f: B) f = 0.0;
-  // for(auto& f: dBdR) f = 0.0;
-  // for(auto& f: dBdZ) f = 0.0;
-  // for(auto& f: E) f = 0.0;
-
-
-  // auto hh = hermiteDataMDSpan(rawHermiteData.data(), nCells[0], nCells[1]); // [nCells[0..1], nDims]
-  // Real sclr = 1.0;
-  // assert(ii < hh.extent(0));
-  // assert(jj < hh.extent(1));
-  // for (auto i : vw::iota(0, hh.extent(2)))
-  // {
-  //   Real sclz = 1.0;
-  //   for (auto j : vw::iota(0, hh.extent(3)))
-  //   {
-  //     for (auto k: vw::iota(0, 6))
-  //     {
-  //       B[k] += hh(ii,jj,i,j,k) * sclr * sclz;
-  //       if(i+1 < hh.extent(2)) dBdR[k] += (i+1)*hh(ii,jj,i+1,j,k) * sclr * sclz;
-  //       if(j+1 < hh.extent(3)) dBdZ[k] += (j+1)*hh(ii,jj,i,j+1,k) * sclr * sclz;
-
-  //       E[k] += hh(ii,jj,i,j,k+6) * sclr * sclz;
-  //     }
-  //     sclz *= lc1;
-  //   }
-  //   sclr *= lc0;
-  // }
-  // for(auto& f: dBdR) f /= h[0];
-  // for(auto& f: dBdZ) f /= h[1];
-}
-
-template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::operator()(Dim6& B,
-                                    Dim6& dBdR,
-                                    Dim6& dBdZ,
-                                    Dim6& E,
-                                    Dim6& V,
-                                    Dim2& Psi,
-                              const Dim2& X)
-{
-  // int ii = std::floor(X[0]/h[0]);
-  // Real lc0 = X[0]/h[0] - ii - 0.5;
-  // int jj = std::floor(X[1]/h[1]);
-  // Real lc1 = X[1]/h[1] - jj - 0.5;
-  // for(auto& f: B) f = 0.0;
-  // for(auto& f: dBdR) f = 0.0;
-  // for(auto& f: dBdZ) f = 0.0;
-  // for(auto& f: E) f = 0.0;
-  // for(auto& f: V) f = 0.0;
-  // for(auto& f: Psi) f = 0.0;
-
-  
-  // auto hh = hermiteDataMDSpan(rawHermiteData.data(), nCells[0], nCells[1]); // [nCells[0..1], nDims]
-  // auto psi = psiMDSpan(rawPsi.data(), nCells[0], nCells[1]);
-   
-  // assert(ii < hh.extent(0));
-  // assert(jj < hh.extent(1));
-
-  // Real sclr = 1.0;
-  // for (auto i : vw::iota(0, hh.extent(2)))
-  // {
-  //   Real sclz = 1.0;
-  //   for (auto j : vw::iota(0, hh.extent(3)))
-  //   {
-  //     for (auto k: vw::iota(0, 6))
-  //     {
-  //       B[k] += hh(ii,jj,i,j,k) * sclr * sclz;
-  //       if(i+1 < hh.extent(2)) dBdR[k] += (i+1)*hh(ii,jj,i+1,j,k) * sclr * sclz;
-  //       if(j+1 < hh.extent(3)) dBdZ[k] += (j+1)*hh(ii,jj,i,j+1,k) * sclr * sclz;
-
-  //       E[k] += hh(ii,jj,i,j,k+6) * sclr * sclz;
-  //       V[k] += hh(ii,jj,i,j,k+12) * sclr * sclz;
-  //     }
-  //     sclz *= lc1;
-  //   }
-  //   sclr *= lc0;
-  // }
-
-  // sclr = 1.0;
-  // for (auto i : vw::iota(0, psi.extent(2)))
-  // {
-  //   Real sclz = 1.0;
-  //   for (auto j : vw::iota(0, psi.extent(3)))
-  //   {
-  //     for (auto k: vw::iota(0, 2))
-  //     {
-  //       Psi[k] += psi(ii,jj,i,j,k) * sclr * sclz;
-  //     }
-  //     sclz *= lc1;
-  //   }
-  //   sclr *= lc0;
-  // }
-
-
-  // for(auto& f: dBdR) f /= h[0];
-  // for(auto& f: dBdZ) f /= h[1];
-}
-
-template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::operator()(Vector& B,
-                                    Vector& dBdR,
-                                    Vector& dBdZ,
-                                    Vector& E,
-                              const Vector& X)
-{
-
-  // for (int i = 0; i < X.size()-1; i+=2)
-  // {
-  //     Dim2 X_ = {X[i], X[i+1]};
-  //     Dim6 B_, dBdR_, dBdZ_, E_;
-  //     operator()(B_, dBdR_, dBdZ_, E_, X_);
-  //     B.insert(B.end(), B_.cbegin(), B_.cend());
-  //     dBdR.insert(dBdR.end(), dBdR_.cbegin(), dBdR_.cend());
-  //     dBdZ.insert(dBdZ.end(), dBdZ_.cbegin(), dBdZ_.cend());
-  //     E.insert(E.end(), E_.cbegin(), E_.cend());
-  // }
-
-  // assert(B.size() == dBdR.size());
-  // assert(dBdR.size() == dBdZ.size());
-  // assert(dBdZ.size() == E.size());
-  // assert(E.size() == X.size()*3);
-}
-
-template<int STENCIL_RADIUS, int M>
-ERROR_CODE FieldInterpolation<STENCIL_RADIUS,M>::operator()(Vector& B,
-                                    Vector& curlB,
-                                    Vector& dBdR,
-                                    Vector& dBdZ,
-                                    Vector& E,
-                                    Vector& V,
-                                    Vector& Psi,
-                              const Vector& X)
-{
-
-    for (int i = 0; i < X.size()-1; i+=2)
-    {
-        Dim2 X_ = {X[i], X[i+1]}; 
-        Dim3 B_, curlB_, dBdR_, dBdZ_, E_, V_;
-        Real Psi_;
-        ERROR_CODE ret = evalPsi(Psi_, X_, tl);
-        if (ret != ERROR_CODE::SUCCESS)
-        {
-            return ret;
-        } 
-        ret = evalDiv0Fields(B_, curlB_, dBdR_, dBdZ_, E_, X_, tl);
-        #ifdef TESTS
-        if (TestInputDeck::getInstance()->getData("TestName") == "GrowthRate")
-        {
-            // highjack the electic field replacing it by slab configuration
-            E_[0] = 0.0;
-            E_[1] = std::stod(TestInputDeck::getInstance()->getData("Ephi"));
-            E_[2] = 0.0;
-        }
-        #endif
-        if (ret != ERROR_CODE::SUCCESS) return ret;
-        B.insert(B.end(), B_.cbegin(), B_.cend());
-        curlB.insert(curlB.end(), curlB_.cbegin(), curlB_.cend());
-        dBdR.insert(dBdR.end(), dBdR_.cbegin(), dBdR_.cend());
-        dBdZ.insert(dBdZ.end(), dBdZ_.cbegin(), dBdZ_.cend());
-        E.insert(E.end(), E_.cbegin(), E_.cend());
-        V.insert(V.end(), V_.cbegin(), V_.cend());
-        Psi.push_back(Psi_);
-    }
-
-    assert(B.size() == dBdR.size());
-    assert(dBdR.size() == dBdZ.size());
-    assert(dBdZ.size() == E.size());
-    assert(E.size() == X.size()/2*3);
-    assert(Psi.size() == X.size()/2);
-    return SUCCESS;
-}
-
-template<int STENCIL_RADIUS, int M>
 void FieldInterpolation<STENCIL_RADIUS,M>::computeBZ()
 {
   auto F = FMDSpan(rawF.data(), nCells[0], nCells[1]);
   int iZ0 = (nCells[1]) / 2;
 
-  for (auto k: vw::iota(0, dim_time))
+  for (auto k: vw::iota(0, 2*nmodes-1))
     // Make RBZ(R,Z) = RBZ(R,Z_0);
     for (auto iR: vw::iota(0, F.extent(0)))
       for (auto idR: vw::iota(0, F.extent(2)))
@@ -1045,7 +658,7 @@ void FieldInterpolation<STENCIL_RADIUS,M>::assemble()
           for (auto jZ: vw::iota(0, hh.extent(3)))
           {
             for (auto dm: vw::iota(0, 3))
-            for (auto it: vw::iota(0, 2))
+            for (auto it: vw::iota(0, hh.extent(6)))
             {
               F(iR, iZ, jR, jZ, 0, dm ,it) = hh(iR, iZ, jR, jZ, 0, dm, it);
               F(iR, iZ, jR, jZ, 1, dm, it) = hh(iR, iZ, jR, jZ, 2, dm, it);
@@ -1056,48 +669,5 @@ void FieldInterpolation<STENCIL_RADIUS,M>::assemble()
     }
 }
 
-
-template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::assembleJRE()
-{
-    auto F  = FMDSpan(rawF.data(), nCells[0], nCells[1]);
-    auto hh = hermiteJreMDSpan(rawHermiteData.data(), nCells[0], nCells[1]);
-    for (auto iR: vw::iota(0, hh.extent(0)))
-    {
-      for (auto iZ: vw::iota(0, hh.extent(1)))
-      {
-        for (auto jR: vw::iota(0, hh.extent(2)))
-        {
-          for (auto jZ: vw::iota(0, hh.extent(3)))
-          {
-            for (auto dm: vw::iota(0, 3))
-            {
-              F(iR, iZ, jR, jZ, 2, dm ,0) = hh(iR, iZ, jR, jZ, 0, dm, 0);
-            }
-          }
-        }
-      }
-    }
-}
-
-#include <fstream>
-template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::readLevelFile()
-{
-    std::fstream lvlfile("../../InitialData/lvl.txt", std::ios_base::in);
-    auto md = levelMDSpan(rawLevel.data(), N[0], N[1]);
-    for(auto j: vw::iota(0, N[1]))
-      for(int k = 0; k < 2; ++k)
-        for(auto i: vw::iota(0, N[0])) 
-          lvlfile >> md(i,j);
-    lvlfile.close();
-}
-
-template<int STENCIL_RADIUS, int M>
-void FieldInterpolation<STENCIL_RADIUS,M>::setTimeFrame(const Real& tl_, const Real& tr_)
-{
-  tl = tl_;
-  tr = tr_;
-}
 
 

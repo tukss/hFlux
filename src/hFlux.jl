@@ -1,10 +1,6 @@
 module hFlux
 
 const lib = joinpath(@__DIR__, "..", "build", "lib", "libhFlux.so")
-# Define Julia functions that wrap library calls
-function test()
-    @ccall lib.test()::Cint 
-end
 
 function initialize()
     @ccall lib.initialize()::Cvoid 
