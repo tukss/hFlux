@@ -2,6 +2,8 @@
 
 hFlux -- lightweight toolkit for tokamak simulation code diagnostics.
 
+![Poincare plots image](assets/index.png)
+
 # Key features
 * Poloidal flux function.
 * Continuous, smooth and divergence free magnetic field reconstructionk.
@@ -12,10 +14,20 @@ hFlux -- lightweight toolkit for tokamak simulation code diagnostics.
 * Field line calculations, supporting Poincare plot data output.
 * C/C++ interface, Python and Julia Wrappers.
 
-# Dependecies
-## Required
+## Requirements
 
-## Optional (enabling features)
+- **CMake ≥ 3.10**  
+- A C++ compiler supporting **C++23**
+
+You can verify your CMake version by running `cmake --version`. Make sure your compiler (e.g., GCC, Clang, MSVC) supports C++23.
+
+
+## Build instructions
+```console
+~$ cmake -Bbuild
+~$ cd build; make
+```
+Now you can access library through Julia interface. Coherent C, C++ and python interfaces are in the works
 
 # Release
 O4754 hFlux was approved for Open-Source Assertion

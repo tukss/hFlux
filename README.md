@@ -1,6 +1,10 @@
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://obeznosov-lanl.github.io/hFlux/) 
+
 # hFlux
 
 hFlux -- lightweight toolkit for tokamak simulation code diagnostics.
+
+<img src="https://github.com/obeznosov-LANL/hFlux/tree/main/docs/src/assets/readme.png" width="100%" title="Poincare plots">
 
 # Key features
 * Poloidal flux function.
