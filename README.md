@@ -1,6 +1,5 @@
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://obeznosov-lanl.github.io/hFlux/) 
 
-# hFlux
+# hFlux [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://obeznosov-lanl.github.io/hFlux/) 
 
 hFlux -- lightweight toolkit for tokamak simulation code diagnostics.
 
