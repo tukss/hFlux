@@ -1,5 +1,5 @@
 #include <iostream>
-#include "FieldInterpolation.hpp"
+#include "hFlux/FieldInterpolation.hpp"
 
 using namespace std;
 extern "C" {

@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+
+if(NOT TARGET hflux::hflux)
+    include(${CMAKE_CURRENT_LIST_DIR}/hflux-targets.cmake)
+endif()
