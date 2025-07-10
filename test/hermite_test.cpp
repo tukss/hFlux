@@ -274,7 +274,7 @@ struct FieldInterpolation {
   }
 };
 
-void run(int nR_data, int nZ_data, Real& hR, std::array<Real, 3>& l2err) {
+void run(int nR_data, int nZ_data, Real& hR, Dim3& l2err) {
   static const int m = 2;
   int nfields = 2;
   int nphi_data = 1;
