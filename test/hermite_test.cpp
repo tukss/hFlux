@@ -239,8 +239,8 @@ struct FieldInterpolation {
 
     KOKKOS_ASSERT(std::abs(r) <= 0.5);
     KOKKOS_ASSERT(std::abs(z) <= 0.5);
-    KOKKOS_ASSERT(hermite_data.extent(0) > ii >= 0);
-    KOKKOS_ASSERT(hermite_data.extent(1) > jj >= 0);
+    KOKKOS_ASSERT(hermite_data.extent(0) > ii && ii >= 0);
+    KOKKOS_ASSERT(hermite_data.extent(1) > jj && jj >= 0);
 
     auto sbv = Kokkos::subview(hermite_data, ii, jj, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
 
