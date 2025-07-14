@@ -9,6 +9,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     - name: setup spack environment
       run: |
         git clone --depth=2 --branch=releases/v1.0 https://github.com/spack/spack.git ~/spack
