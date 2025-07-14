@@ -1,0 +1,17 @@
+name: Build and test
+
+on: pull_request
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: configure
+      run: cmake -Bbuild
+    - name: make
+      run: cmake --build build
+    - name: make test
+      run: cmake --build build -t test
