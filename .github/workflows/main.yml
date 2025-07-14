@@ -11,7 +11,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: setup spack environment
       run: |
-        git clone --depth=2 --branch=releases/v0.23 https://github.com/spack/spack.git ~/spack
+        git clone --depth=2 --branch=releases/v1.0 https://github.com/spack/spack.git ~/spack
         source ~/spack/share/spack/setup-env.sh
         spack env create hflux spack.yaml
         spack env activate hflux
