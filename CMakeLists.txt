@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Set the project name
 project(hflux
-  LANGUAGES CXX
+  LANGUAGES C CXX
   VERSION 0.1)
 
 # Set the C++ standard
