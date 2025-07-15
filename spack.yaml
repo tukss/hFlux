@@ -2,7 +2,7 @@ spack:
   view: my_view
   specs:
   - hdf5+cxx
-  - kokkos
+  - kokkos %gcc
 
   config:
     install_tree:
