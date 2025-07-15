@@ -8,22 +8,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
       with:
         submodules: true
-    - name: setup spack environment
-      run: |
-        git clone --depth=2 --branch=releases/v1.0 https://github.com/spack/spack.git ~/spack
-        source ~/spack/share/spack/setup-env.sh
-        spack env create hflux spack.yaml
-        spack env activate hflux
-        spack install
+
+    - name: Setup Spack
+      uses: spack/setup-spack@v2
+
+    - name: Concretize
+      run: spack -e . concretize
+
+    - name: Install
+      run: spack -e . install
+
     - name: configure
+      shell: spack-bash {0}
       run: |
-        source ~/spack/share/spack/setup-env.sh
-        spack env activate hflux
+        spack env activate .
         cmake -Bbuild
+
     - name: make
       run: cmake --build build
+
     - name: make test
       run: cmake --build build -t test

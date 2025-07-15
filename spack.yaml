@@ -1,12 +1,16 @@
-# This is a Spack Environment file.
-#
-# It describes a set of packages to be installed, along with
-# configuration settings.
 spack:
-  # add package specs to the `specs` list
+  view: my_view
   specs:
   - hdf5+cxx
   - kokkos
-  view: true
+
+  config:
+    install_tree:
+      root: /opt/spack
+
   concretizer:
     unify: true
+
+  packages:
+    all:
+      require: 'target=x86_64_v3'
