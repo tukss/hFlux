@@ -8,7 +8,7 @@ constexpr std::array<std::array<Real, StencilSize>, 6>  fdw()
                   "Unsupported stencil size — only 5, 7 or 9 are allowed.");
 
     if constexpr (StencilSize == 5) {
-        // 5-point stencil, O(h⁴)
+        // 5-point stencil, O(h^4)
         return  {{
           {0.0, 0.0, 1.0, 0.0, 0.0},
           {1.0 / 12, -2.0 / 3, 0, 2.0 / 3, -1.0 / 12}, // Accuracy 4
