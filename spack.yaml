@@ -1,0 +1,16 @@
+spack:
+  view: my_view
+  specs:
+  - hdf5+cxx
+  - kokkos %gcc
+
+  config:
+    install_tree:
+      root: /opt/spack
+
+  concretizer:
+    unify: true
+
+  packages:
+    all:
+      require: 'target=x86_64_v3'

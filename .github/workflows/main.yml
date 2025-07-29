@@ -1,0 +1,37 @@
+name: Build and test
+
+on: pull_request
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Setup Spack
+      uses: spack/setup-spack@v2
+
+    - name: Concretize
+      run: spack -e . concretize
+
+    - name: Install
+      run: spack -e . install
+
+    - name: configure
+      shell: spack-bash {0}
+      run: |
+        spack env activate .
+        cmake -Bbuild
+
+    - name: make
+      run: cmake --build build
+
+    - name: make test
+      run: |
+        cd build
+        ctest --verbose
