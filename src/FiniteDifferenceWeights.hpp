@@ -19,7 +19,7 @@ constexpr std::array<std::array<Real, StencilSize>, 6>  fdw()
         }};
     }
     else if constexpr (StencilSize == 7) {
-        // 7-point stencil, O(h⁶)
+        // 7-point stencil, O(h^6)
         return {{
           {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0},
           {-1.0 / 60, 3.0 / 20, -3.0 / 4, 0, 3.0 / 4, -3.0 / 20, 1.0 / 60}, // Accuracy 6
