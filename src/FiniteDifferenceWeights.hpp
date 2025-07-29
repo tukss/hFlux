@@ -30,7 +30,7 @@ constexpr std::array<std::array<Real, StencilSize>, 6>  fdw()
         }};
     }
     else /* if constexpr (StencilSize == 9) */ {
-        // 9-point stencil, O(h⁸)
+        // 9-point stencil, O(h^8)
 
         return {{
           {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0},
