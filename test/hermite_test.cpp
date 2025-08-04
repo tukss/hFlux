@@ -7,37 +7,8 @@
 
 #include "AnalyticField.hpp"
 #include "common.hpp"
+#include "FiniteDifferenceWeights.hpp"
 
-
-namespace FiniteDifferenceTable {
-    // Order 1 (First derivative)
-  constexpr std::array<std::array<std::array<Real, 9>, 6>, 3> fdw = {{
-      {{
-        {0.0, 0.0, 1.0, 0.0, 0.0},
-        {1.0 / 12, -2.0 / 3, 0, 2.0 / 3, -1.0 / 12}, // Accuracy 4
-        {-1.0 / 12, 4.0 / 3, -5.0 / 2, 4.0 / 3, -1.0 / 12}, // Accuracy 4
-        {-0.5, 1, 0, -1, 0.5},                     // Accuracy 2
-        {1, -4, 6, -4, 1},                          // Accuracy 2
-        {0.0, 0.0, 0.0, 0.0, 0.0}
-        }},
-      {{
-        {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0},
-        {-1.0 / 60, 3.0 / 20, -3.0 / 4, 0, 3.0 / 4, -3.0 / 20, 1.0 / 60}, // Accuracy 6
-        {1.0 / 90, -3.0 / 20, 3.0 / 2, -49.0 / 18, 3.0 / 2, -3.0 / 20, 1.0 / 90}, // Accuracy 6
-        {1.0 / 8, -1, 13.0 / 8, 0, -13.0 / 8, 1, -1.0 / 8}, // Accuracy 4
-        {-1.0 / 6, 2.0, -13.0 / 2, 28.0 / 3, -13.0 / 2, 2.0, -1.0 / 6},  // Accuracy 4
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-        }},
-      {{
-        {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0},
-        {1.0 / 280, -4.0 / 105, 1.0 / 5, -4.0 / 5, 0, 4.0 / 5, -1.0 / 5, 4.0 / 105, -1.0 / 280}, // Accuracy 8
-        {-1.0 / 560, 8.0 / 315, -1.0 / 5, 8.0 / 5, -205.0 / 72, 8.0 / 5, -1.0 / 5, 8.0 / 315, -1.0 / 560}, // Accuracy 8
-        {-7.0 / 240, 3.0 / 10, -169.0 / 120, 61.0 / 30, 0, -61.0 / 30, 169.0 / 120, -3.0 / 10, 7.0 / 240}, // Accuracy 6
-        {7.0 / 240, -2.0 / 5, 169.0 / 60, -122.0 / 15, 91.0 / 8, -122.0 / 15, 169.0 / 60, -2.0 / 5, 7.0 / 240}, // Accuracy 6
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-        }}
-    }};
-}
 
 template<int m, int swidth = 7>
 struct FieldInterpolation {
@@ -69,7 +40,7 @@ struct FieldInterpolation {
     assert(view_hermite_data.extent(0) == m+1);
     assert(view_hermite_data.extent(1) == m+1);
 
-    auto D = FiniteDifferenceTable::fdw[1];
+    constexpr auto D = fdw<swidth>();
 
     Real sclx = 1.0;
     for (int idx = 0; idx < m+1; ++idx)
@@ -268,8 +239,8 @@ struct FieldInterpolation {
 
     KOKKOS_ASSERT(std::abs(r) <= 0.5);
     KOKKOS_ASSERT(std::abs(z) <= 0.5);
-    KOKKOS_ASSERT(hermite_data.extent(0) > ii >= 0);
-    KOKKOS_ASSERT(hermite_data.extent(1) > jj >= 0);
+    KOKKOS_ASSERT(hermite_data.extent(0) > ii && ii >= 0);
+    KOKKOS_ASSERT(hermite_data.extent(1) > jj && jj >= 0);
 
     auto sbv = Kokkos::subview(hermite_data, ii, jj, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
 
@@ -303,7 +274,7 @@ struct FieldInterpolation {
   }
 };
 
-void run(int nR_data, int nZ_data, Real& hR, std::array<Real, 3>& l2err) {
+void run(int nR_data, int nZ_data, Real& hR, Dim3& l2err) {
   static const int m = 2;
   int nfields = 2;
   int nphi_data = 1;
