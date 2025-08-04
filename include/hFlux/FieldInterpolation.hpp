@@ -3,7 +3,6 @@
 #include <cmath>
 #include <functional>
 #include "common.hpp"
-#include "mdspan.hpp"
 
 namespace vw=std::ranges::views;
 namespace stdex = Kokkos;
