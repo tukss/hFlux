@@ -2,6 +2,8 @@
 #include <ranges>
 #include <cmath>
 #include <functional>
+#define MDSPAN_USE_BRACKET_OPERATOR 0
+#include <mdspan/mdspan.hpp>
 #include "common.hpp"
 
 namespace vw=std::ranges::views;
