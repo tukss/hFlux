@@ -11,7 +11,7 @@ target_include_directories(hflux
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_include_directories(hflux PRIVATE "${CMAKE_SOURCE_DIR}/external/mdspan/include/mdspan")
+target_link_libraries(hflux PUBLIC Kokkos::kokkos)
 
 include(GNUInstallDirs)
 
