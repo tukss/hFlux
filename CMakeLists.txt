@@ -6,7 +6,7 @@ project(hflux
   VERSION 0.1)
 
 # Set the C++ standard
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(HDF5 COMPONENTS C CXX)
