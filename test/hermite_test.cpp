@@ -1,7 +1,6 @@
 #include <cmath>
 #include <iostream>
 
-
 #include "AnalyticField.hpp"
 #include "FieldInterpolation.hpp"
 #include "FiniteDifferenceWeights.hpp"
@@ -31,7 +30,7 @@ void run(int nR_data, int nZ_data, Real& hR, Dim3& l2err) {
   FieldInterpolation<m> field_interpolation(nR_data, nZ_data, nfields, nphi_data, nt, R0, Z0, dR, dZ);
   auto field_data = field_interpolation.getDataRef();
 
-  using policy2D = Kokkos::MDRangePolicy<Kokkos::Rank<2>>;
+  using policy2D = Kokkos::MDRangePolicy<ExecSpace, Kokkos::Rank<2>>;
   Kokkos::parallel_for("setfields",
   policy2D({0,0}, {nR_data,nZ_data}),
   KOKKOS_LAMBDA(int i, int j){
@@ -67,12 +66,12 @@ void run(int nR_data, int nZ_data, Real& hR, Dim3& l2err) {
   Real dR_pl = (corners[1] - eps - (corners[0] + eps)) / (nR_pl-1);
   Real dZ_pl = (corners[3] - eps - (corners[2] + eps)) / (nZ_pl-1);
 
-  Kokkos::View<Real******> view_pl("plot", nR_pl, nZ_pl, nfields, 3, nphi_data, nt);
+  Kokkos::View<Real******, ExecSpace> view_pl("plot", nR_pl, nZ_pl, nfields, 3, nphi_data, nt);
 
   l2err = {};
   Kokkos::parallel_reduce("eval",
   policy2D({0,0}, {nR_pl,nZ_pl}),
-  KOKKOS_LAMBDA(int i, int j, Dim3& err){
+  KOKKOS_LAMBDA(int i, int j, Real& err0, Real& err1, Real& err2){
     // linearize: row-major numbering
     auto sbv = Kokkos::subview(view_pl,
              i, j, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
@@ -85,10 +84,10 @@ void run(int nR_data, int nZ_data, Real& hR, Dim3& l2err) {
     Real t = 0.0;
     af(X, t, vB, curlB, dBdR, dBdZ, E);
 
-    err[0] += pow(vB[0] - sbv(0, 0, 0, 0) / R, 2);
-    err[1] += pow(vB[1] - sbv(0, 1, 0, 0) / R, 2);
-    err[2] += pow(vB[2] - sbv(0, 2, 0, 0) / R, 2);
-  }, l2err);
+    err0 += pow(vB[0] - sbv(0, 0, 0, 0) / R, 2);
+    err1 += pow(vB[1] - sbv(0, 1, 0, 0) / R, 2);
+    err2 += pow(vB[2] - sbv(0, 2, 0, 0) / R, 2);
+  }, l2err[0], l2err[1], l2err[2]);
 
   l2err[0] = sqrt(l2err[0] * dR_pl * dZ_pl);
   l2err[1] = sqrt(l2err[1] * dR_pl * dZ_pl);

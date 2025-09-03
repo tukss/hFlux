@@ -1,9 +1,10 @@
 #pragma once
-#include <array>
+#include <Kokkos_Core.hpp>
 #include <type_traits>
 
 template <size_t StencilSize>
-constexpr std::array<std::array<Real, StencilSize>, 6>  fdw()
+KOKKOS_INLINE_FUNCTION
+static constexpr Kokkos::Array<Kokkos::Array<Real, StencilSize>, 6>  fdw()
 {
     static_assert(StencilSize == 5 || StencilSize == 7 || StencilSize == 9,
                   "Unsupported stencil size — only 5, 7 or 9 are allowed.");

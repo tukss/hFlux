@@ -5,28 +5,9 @@
 
 using Real = double;
 
-template <std::size_t D>
-struct Vec : std::array<Real, D>
-{
-  friend Vec<D> operator+(Vec<D> l, const Vec<D> &r)
-  {
-    for(decltype(D) i = 0; i < D; ++i) {
-      l[i] += r[i];
-    }
-    return l;
-  }
-  Vec<D>& operator+=(const Vec<D> &r)
-  {
-    for(decltype(D) i = 0; i < D; ++i) {
-      (*this)[i] += r[i];
-    }
-    return *this;
-  }
-};
-
-using Dim2 = Vec<2>;
-using Dim3 = Vec<3>;
-using Dim5 = Vec<5>;
+using Dim2 = Kokkos::Array<Real, 2>;
+using Dim3 = Kokkos::Array<Real, 3>;
+using Dim5 = Kokkos::Array<Real, 5>;
 
 KOKKOS_INLINE_FUNCTION
 void cross_product(const Dim3& A, const Dim3& B, Dim3& cross){
