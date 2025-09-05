@@ -1,5 +1,5 @@
 #pragma once
-#include "common.hpp"
+#include "hFlux/common.hpp"
 
 struct AnalyticField {
   const Real q0, q2, R_a, E_0;

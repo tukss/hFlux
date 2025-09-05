@@ -4,10 +4,12 @@
 #include <cstddef>
 
 using Real = double;
-
-using Dim2 = Kokkos::Array<Real, 2>;
-using Dim3 = Kokkos::Array<Real, 3>;
-using Dim5 = Kokkos::Array<Real, 5>;
+using Vector = std::vector<Real>;
+using Dim2 = Kokkos::Array<Real, 2>; // R, Z
+using Dim3 = Kokkos::Array<Real, 3>; // R, phi, Z
+using Dim5 = Kokkos::Array<Real, 5>; // p,xi, R, phi,Z
+using Dim6 = Kokkos::Array<Real, 6>; // R phi Z and,  R phi Z  end
+using IntDim2 = Kokkos::Array<int, 2>;
 
 KOKKOS_INLINE_FUNCTION
 void cross_product(const Dim3& A, const Dim3& B, Dim3& cross){
