@@ -2,8 +2,8 @@
 #include <iostream>
 
 #include "AnalyticField.hpp"
-#include "FieldInterpolation.hpp"
-#include "FiniteDifferenceWeights.hpp"
+#include "hFlux/FieldInterpolation.hpp"
+#include "hFlux/FiniteDifferenceWeights.hpp"
 
 void run(int nR_data, int nZ_data, Real& hR, Dim3& l2err) {
   static const int m = 2;

@@ -2,6 +2,8 @@
 #include <Kokkos_Core.hpp>
 #include <type_traits>
 
+#include "common.hpp"
+
 template <size_t StencilSize>
 KOKKOS_INLINE_FUNCTION
 static constexpr Kokkos::Array<Kokkos::Array<Real, StencilSize>, 6>  fdw()
