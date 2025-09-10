@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+  void hflux_kokkos_init();
+  void hflux_kokkos_finalize();
+
   void hflux_init(const int nR_data, const int nZ_data, const int nfields,
                   const int nphi_data, const int nt, const double R0,
                   const double Z0, const double dR, const double dZ, void **fi);

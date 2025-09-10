@@ -4,6 +4,14 @@
 
 constexpr int m = 2;
 
+void hflux_kokkos_init() {
+  Kokkos::initialize();
+}
+
+void hflux_kokkos_finalize() {
+  Kokkos::finalize();
+}
+
 void hflux_init(
     const int nR_data,
     const int nZ_data,
@@ -15,7 +23,6 @@ void hflux_init(
     const double dR,
     const double dZ,
     void ** fi) {
-  Kokkos::initialize();
   *fi = (void*) new FieldInterpolation<m>(nR_data, nZ_data, nfields, nphi_data, nt, R0, Z0, dR, dZ);
 }
 
@@ -89,5 +96,4 @@ void hflux_destroy(void* fi) {
   auto pFi = static_cast<FieldInterpolation<m> *>(fi);
 
   delete pFi;
-  Kokkos::finalize();
 }
