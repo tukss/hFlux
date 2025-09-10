@@ -1,4 +1,4 @@
-#include "c_wrapper.h"
+#include "hFlux/c_wrapper.h"
 
 #include "hFlux/FieldInterpolation.hpp"
 
