@@ -1,17 +1,19 @@
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "hFlux/c_wrapper.h"
 
 typedef double Dim3[3];
 
-void run(int nR_data, int nZ_data, double hR, Dim3 l2err) {
+void run(int nR_data, int nZ_data, double* phR, Dim3 l2err) {
   void *fi_data;
-  
+
   int nfields = 2;
   int nphi_data = 1;
   int nt = 1;
+  int ndim  = 3;
   double R0 = 1.525;
   double Z0 = -2.975;
   double dR = 0.0345;
@@ -31,8 +33,70 @@ void run(int nR_data, int nZ_data, double hR, Dim3 l2err) {
   hflux_init(nR_data, nZ_data, nfields, nphi_data, nt, R0, Z0, dR, dZ,
              &fi_data);
 
-  // add code for testing the interpolation calls
+  double * raw_field_data = (double*) malloc(nR_data * nZ_data * nfields * ndim * nphi_data * nt  * sizeof(double));
 
+  for (int i = 0; i < nR_data; ++i)
+    for (int j = 0; j < nZ_data; ++j) {
+      double R = R0 + dR * i, Z = Z0 + dZ * j;
+      double q = 2.1 + 2.0 * (R - 3.0) * (R - 3.0) + 2.0 * Z * Z;
+      for (int fi = 0; fi < nfields; ++fi)
+        for (int di = 0; di < ndim; ++di)
+          for (int k = 0; k < nphi_data; ++k)
+            for (int ti = 0; ti < nt; ++ti) {
+              int ii = ti + nt * (k + nphi_data * (di + ndim * (fi + nfields * (j + nZ_data * i))));
+              if (di == 0) raw_field_data[ii] = -Z / q;
+              else if (di == 1) raw_field_data[ii] = 3.0;
+              else  raw_field_data[ii] = (R - 3.0) / q;
+            }
+    }
+
+  hflux_interpolate(fi_data, raw_field_data);
+
+  int nR_mesh = 400;
+  int nZ_mesh = 800;
+  int nphi_mesh = 1;
+  int nt_mesh = 1;
+  int N = nR_mesh * nZ_mesh * nphi_mesh * nt_mesh;
+
+  double * R_mesh = (double*) malloc(N * sizeof(double));
+  double * Z_mesh = (double*) malloc(N * sizeof(double));
+  double * phi_mesh = (double*) malloc(N * sizeof(double));
+  double * t_mesh = (double*) malloc(N * sizeof(double));
+  double * mesh_value = (double*) malloc(N * sizeof(double) * nfields * ndim);
+
+  double eps = 1e-8;
+  double corners[4];
+  double R0_mesh = corners[0] + eps;
+  double Z0_mesh = corners[2] + eps;
+  double dR_mesh = (corners[1] - eps - (corners[0] + eps)) / (nR_mesh-1);
+  double dZ_mesh = (corners[3] - eps - (corners[2] + eps)) / (nZ_mesh-1);
+
+  hflux_field_eval(fi_data, N, R_mesh, phi_mesh, Z_mesh, t_mesh, mesh_value);
+  l2err[0] = 0.0;
+  l2err[1] = 0.0;
+  l2err[2] = 0.0;
+  for (int i = 0; i < nR_mesh; ++i)
+    for (int j = 0; j < nZ_mesh; ++j) {
+      int ii = j + i * nZ_mesh;
+      double R = R_mesh[ii], Z = Z_mesh[ii];
+      double q = 2.1 + 2.0 * (R - 3.0) * (R - 3.0) + 2.0 * Z * Z;
+      l2err[0] += pow(    -Z / q / R - R_mesh[ii * nfields * ndim + 0 * nt_mesh * nphi_mesh] / R, 2);
+      l2err[1] += pow(       3.0 / R - R_mesh[ii * nfields * ndim + 1 * nt_mesh * nphi_mesh] / R, 2);
+      l2err[2] += pow((R-3.0)/ q / R - R_mesh[ii * nfields * ndim + 2 * nt_mesh * nphi_mesh] / R, 2);
+    }
+
+  l2err[0] = sqrt(l2err[0] * dR_mesh * dZ_mesh);
+  l2err[1] = sqrt(l2err[1] * dR_mesh * dZ_mesh);
+  l2err[2] = sqrt(l2err[2] * dR_mesh * dZ_mesh);
+
+  *phR = 6 * dR; // default stencil width is 7
+
+  free(R_mesh);
+  free(Z_mesh);
+  free(phi_mesh);
+  free(t_mesh);
+  free(mesh_value);
+  free(raw_field_data);
   hflux_destroy(fi_data);
 }
 
@@ -48,7 +112,7 @@ int main(int argc, char **argv) {
     double hR_new;
     Dim3 l2err_new;
 
-    run(NR, 2*NR, hR_new, l2err_new);
+    run(NR, 2*NR, &hR_new, l2err_new);
     if (ix > 0) {
       if (fabs(pow(l2err[0] / l2err_new[0], 1.0 / (order - 0.0))  - hR / hR_new) > 5.e-3) {
         fprintf(stderr, "B_R interpolation did not converge with order %f\n", order);

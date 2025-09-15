@@ -13,6 +13,7 @@ extern "C" {
                   const double Z0, const double dR, const double dZ, void **fi);
 
   void hflux_interpolate(void *fi, double *raw_field_data);
+  void hflux_getcorners(void *fi, double *corners);
 
   void hflux_compute_poincare(void* fi,
                               const double r0,

@@ -31,14 +31,20 @@ void hflux_interpolate(
 
     auto pFi = static_cast<FieldInterpolation<m>*>(fi);
 
-    Kokkos::View<double ******, Kokkos::LayoutRight, Kokkos::HostSpace,
+    Kokkos::View<double ******, Kokkos::LayoutLeft, Kokkos::HostSpace,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>
         h_view(raw_field_data, pFi->nR_data, pFi->nZ_data, pFi->nfields,
                pFi->ndims, pFi->nphi_data, pFi->nt);
-    Kokkos::deep_copy(h_view, pFi->getDataRef());
+    Kokkos::deep_copy(pFi->getDataRef(), h_view);
     Kokkos::fence();
 
     pFi->interpolate();
+}
+
+void hflux_getcorners(void* fi, double* corners) {
+    auto pFi = static_cast<FieldInterpolation<m>*>(fi);
+    auto corners_ = pFi -> getCorners();
+    for (int i = 0; i < 4; ++i) corners[i] = corners_[i];
 }
 
 void hflux_compute_poincare(
@@ -62,7 +68,7 @@ void hflux_field_eval(
 
   const auto pFi = *static_cast<FieldInterpolation<m>*>(fi);
   using MeshView = Kokkos::View<const double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using MeshValueView = Kokkos::View<double*****, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MeshValueView = Kokkos::View<double*****, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   const MeshView R_h(R_mesh, N);
   const MeshView phi_h(phi_mesh, N);
@@ -80,15 +86,16 @@ void hflux_field_eval(
 
   Kokkos::parallel_for("eval", N,
   KOKKOS_LAMBDA(int i){
-    Kokkos::Array<Real, 5> X = {};
-    X[2] = R(i); X[4] = Z(i);
     auto sbv = Kokkos::subview(B,
              i, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+    Dim5 X = {};
+    X[2] = R(i);
+    X[4] = Z(i);
     pFi(sbv, X);
   });
 
   Kokkos::fence();
-  Kokkos::deep_copy(B, B_h);
+  Kokkos::deep_copy(B_h, B);
 
 }
 
