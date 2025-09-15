@@ -29,12 +29,8 @@ function(add_hFlux_test test_name)
   # 1) Add the executable
   add_executable(${test_name} ${PT_SRCS})
 
-  # 2) Include dirs
-  target_include_directories(${test_name} PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
-  )
+  # 2) Add include directories and link hflux library
+  target_link_libraries(${test_name} PRIVATE hflux::hflux m)
 
   # 3) C++20
   target_compile_features(${test_name} PRIVATE cxx_std_20)

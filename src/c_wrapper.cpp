@@ -1,8 +1,24 @@
+<<<<<<< HEAD
 #include "FieldInterpolation.hpp"
 
 extern "C" {
 
 static const m = 2;
+=======
+#include "hFlux/c_wrapper.h"
+
+#include "hFlux/FieldInterpolation.hpp"
+
+constexpr int m = 2;
+
+void hflux_kokkos_init() {
+  Kokkos::initialize();
+}
+
+void hflux_kokkos_finalize() {
+  Kokkos::finalize();
+}
+>>>>>>> d9a85c301993fba84de5e4c44bf6f9df28b7e83c
 
 void hflux_init(
     const int nR_data,
@@ -13,22 +29,21 @@ void hflux_init(
     const double R0,
     const double Z0,
     const double dR,
-    const double dZ
+    const double dZ,
     void ** fi) {
-  Kokkos::initialize();
   *fi = (void*) new FieldInterpolation<m>(nR_data, nZ_data, nfields, nphi_data, nt, R0, Z0, dR, dZ);
 }
 
 void hflux_interpolate(
     void* fi, double* raw_field_data) {
 
-    pFi = static_cast<FieldInterpolation<m>>(fi);
+    auto pFi = static_cast<FieldInterpolation<m>*>(fi);
 
-    Kokkos::View<const double******, Kokkos::LayoutRight, Kokkos::HostSpace,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>> h_view(
-                   raw_field_data, pFi->nR_data, pFi->nZdata,
-                   pFi->nfields, pFi->ndims, pFi->nphi_data, pFi->nt);
-    Kokkos::deep_copy(h_view,  pFi->getDataRef());
+    Kokkos::View<double ******, Kokkos::LayoutRight, Kokkos::HostSpace,
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+        h_view(raw_field_data, pFi->nR_data, pFi->nZ_data, pFi->nfields,
+               pFi->ndims, pFi->nphi_data, pFi->nt);
+    Kokkos::deep_copy(h_view, pFi->getDataRef());
     Kokkos::fence();
 
     pFi->interpolate();
@@ -38,7 +53,7 @@ void hflux_compute_poincare(
     void* fi,
     const double r0,
     const double dr,
-    const int n_r
+    const int n_r,
     const int n_theta,
     const double* poincare_data) {
 
@@ -46,16 +61,16 @@ void hflux_compute_poincare(
 
 void hflux_field_eval(
     void* fi,
-    const int N;
+    const int N,
     const double* R_mesh,
     const double* phi_mesh,
     const double* Z_mesh,
     const double* t_mesh,
-    double* mesh_value);
+    double* mesh_value) {
 
-  const auto pFi = *static_cast<FieldInterpolation<m>>(fi);
-  using MeshView Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using MeshValueView Kokkos::Kokkos::View<double*****, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  const auto pFi = *static_cast<FieldInterpolation<m>*>(fi);
+  using MeshView = Kokkos::View<const double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MeshValueView = Kokkos::View<double*****, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   const MeshView R_h(R_mesh, N);
   const MeshView phi_h(phi_mesh, N);
@@ -77,7 +92,7 @@ void hflux_field_eval(
     X[2] = R(i); X[4] = Z(i);
     auto sbv = Kokkos::subview(B,
              i, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-    field_interpolation(sbv, X);
+    pFi(sbv, X);
   });
 
   Kokkos::fence();
@@ -86,7 +101,7 @@ void hflux_field_eval(
 }
 
 void hflux_destroy(void* fi) {
-  Kokkos::finalize();
-}
+  auto pFi = static_cast<FieldInterpolation<m> *>(fi);
 
+  delete pFi;
 }

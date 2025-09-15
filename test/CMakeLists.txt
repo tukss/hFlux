@@ -6,10 +6,14 @@ include("Utils")
 
 add_hFlux_test(hermite_test
   SRCS
-    ../src/FiniteDifferenceWeights.hpp
-    AnalyticField.hpp
-    common.hpp
     hermite_test.cpp
+  INPUT
+    hermite_test.input
+)
+
+add_hFlux_test(hermite_test_c
+  SRCS
+    hermite_test.c
   INPUT
     hermite_test.input
 )
