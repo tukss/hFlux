@@ -1,13 +1,6 @@
-<<<<<<< HEAD
-#include "FieldInterpolation.hpp"
-
-extern "C" {
-
-static const m = 2;
-=======
-#include "hFlux/c_wrapper.h"
-
+#include <Kokkos_Core.hpp>
 #include "hFlux/FieldInterpolation.hpp"
+#include "hFlux/c_wrapper.h"
 
 constexpr int m = 2;
 
@@ -18,7 +11,6 @@ void hflux_kokkos_init() {
 void hflux_kokkos_finalize() {
   Kokkos::finalize();
 }
->>>>>>> d9a85c301993fba84de5e4c44bf6f9df28b7e83c
 
 void hflux_init(
     const int nR_data,
