@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
   int NR = 100;
   Dim3 l2err;
   double hR;
-  double order = (2 * 2 + 2);
+  double order = 2 * 2 + 2;
 
   hflux_kokkos_init();
 
