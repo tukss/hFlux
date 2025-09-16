@@ -272,6 +272,36 @@ struct FieldInterpolation {
   }
 
 
+  template <typename ViewType>
+  KOKKOS_INLINE_FUNCTION Real Psi(const int idx, const ViewType &v, const Real& t) const {
+    Dim2 Xloc;
+    int index;
+    Real val = 0.0;
+    ERROR_CODE ret = getHermiteIndex(idx, v, index, Xloc);
+    if (ret != SUCCESS)
+      return ret;
+
+    TimeInterpolation ti(tl, tr, t);
+
+    auto psi = Kokkos::subview(v_Psi, index / v_f.extent(1), index % v_f.extent(1),
+                             Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+
+    Real sclr = 1.0;
+    for (int i = 0; i < psi.extent(0); ++i) {
+      Real sclz = 1.0;
+      for (int j = 0; j < psi.extent(1); ++j) {
+        Real mon = sclr * sclz;
+        val += ti(psi(i, j, 0), psi(i, j, 1)) * mon;
+        sclz *= Xloc[1];
+      }
+      sclr *= Xloc[0];
+    }
+
+    return val;
+  }
+
+
+
   decltype(auto) getDataRef() & {
     return data;
   }
