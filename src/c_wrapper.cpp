@@ -82,16 +82,14 @@ void hflux_field_eval(
   auto t = Kokkos::create_mirror_view_and_copy(DevMemSpace{}, t_h);
 
   MeshValueView B_h(mesh_value, N, pFi.nfields, pFi.ndims, pFi.nphi_data, pFi.nt);
-  auto B = Kokkos::create_mirror_view(DevMemSpace{}, B_h);
+  auto B = Kokkos::create_mirror_view_and_copy(DevMemSpace{}, B_h);
 
+  Kokkos::fence();
   Kokkos::parallel_for("eval", N,
   KOKKOS_LAMBDA(int i){
     auto sbv = Kokkos::subview(B,
              i, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-    Dim5 X = {};
-    X[2] = R(i);
-    X[4] = Z(i);
-    pFi(sbv, X);
+    pFi(sbv, {0.0, 0.0, R(i), phi(i), Z(i)});
   });
 
   Kokkos::fence();

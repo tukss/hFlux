@@ -43,7 +43,7 @@ void run(int nR_data, int nZ_data, double* phR, Dim3 l2err) {
         for (int di = 0; di < ndim; ++di)
           for (int k = 0; k < nphi_data; ++k)
             for (int ti = 0; ti < nt; ++ti) {
-              int ii = ti + nt * (k + nphi_data * (di + ndim * (fi + nfields * (j + nZ_data * i))));
+              int ii = i + nR_data * (j + nZ_data * (fi + nfields * (di + ndim * (k + nphi_data * ti))));
               if (di == 0) raw_field_data[ii] = -Z / q;
               else if (di == 1) raw_field_data[ii] = 3.0;
               else  raw_field_data[ii] = (R - 3.0) / q;
@@ -66,10 +66,21 @@ void run(int nR_data, int nZ_data, double* phR, Dim3 l2err) {
 
   double eps = 1e-8;
   double corners[4];
+  hflux_getcorners(fi_data, corners);
   double R0_mesh = corners[0] + eps;
   double Z0_mesh = corners[2] + eps;
   double dR_mesh = (corners[1] - eps - (corners[0] + eps)) / (nR_mesh-1);
   double dZ_mesh = (corners[3] - eps - (corners[2] + eps)) / (nZ_mesh-1);
+
+  for (int i = 0; i < nR_mesh; ++i)
+    for (int j = 0; j < nZ_mesh; ++j) {
+      int ii = i + j * nR_mesh;
+      R_mesh[ii] = R0_mesh + dR_mesh * i;
+      Z_mesh[ii] = Z0_mesh + dZ_mesh * j;
+      phi_mesh[ii] = 0.0;
+      t_mesh[ii] = 0.0;
+    }
+
 
   hflux_field_eval(fi_data, N, R_mesh, phi_mesh, Z_mesh, t_mesh, mesh_value);
   l2err[0] = 0.0;
@@ -77,12 +88,15 @@ void run(int nR_data, int nZ_data, double* phR, Dim3 l2err) {
   l2err[2] = 0.0;
   for (int i = 0; i < nR_mesh; ++i)
     for (int j = 0; j < nZ_mesh; ++j) {
-      int ii = j + i * nZ_mesh;
+      int ii = i + j * nR_mesh;
       double R = R_mesh[ii], Z = Z_mesh[ii];
+      int jj = i + nR_mesh * (j + nZ_mesh * (0 + nfields * (0 + ndim * (0 + nphi_mesh * 0))));
       double q = 2.1 + 2.0 * (R - 3.0) * (R - 3.0) + 2.0 * Z * Z;
-      l2err[0] += pow(    -Z / q / R - R_mesh[ii * nfields * ndim + 0 * nt_mesh * nphi_mesh] / R, 2);
-      l2err[1] += pow(       3.0 / R - R_mesh[ii * nfields * ndim + 1 * nt_mesh * nphi_mesh] / R, 2);
-      l2err[2] += pow((R-3.0)/ q / R - R_mesh[ii * nfields * ndim + 2 * nt_mesh * nphi_mesh] / R, 2);
+      l2err[0] += pow(    -Z / q / R - mesh_value[jj] / R, 2);
+      jj = i + nR_mesh * (j + nZ_mesh * (0 + nfields * (1 + ndim * (0 + nphi_mesh * 0))));
+      l2err[1] += pow(       3.0 / R - mesh_value[jj] / R, 2);
+      jj = i + nR_mesh * (j + nZ_mesh * (0 + nfields * (2 + ndim * (0 + nphi_mesh * 0))));
+      l2err[2] += pow((R-3.0)/ q / R - mesh_value[jj] / R, 2);
     }
 
   l2err[0] = sqrt(l2err[0] * dR_mesh * dZ_mesh);
@@ -116,6 +130,7 @@ int main(int argc, char **argv) {
     if (ix > 0) {
       if (fabs(pow(l2err[0] / l2err_new[0], 1.0 / (order - 0.0))  - hR / hR_new) > 5.e-3) {
         fprintf(stderr, "B_R interpolation did not converge with order %f\n", order);
+        fprintf(stderr, "l2err[0] =%le, l2err_new[0] = %le", l2err[0], l2err_new[0]);
         hflux_kokkos_finalize();
         return 1;
       }
