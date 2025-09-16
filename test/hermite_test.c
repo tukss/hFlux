@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
   int NR = 100;
   Dim3 l2err;
   double hR;
-  double order = (2 * 2 + 2);
+  double order = 2 * 2 + 2;
 
   hflux_kokkos_init();
 
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     if (ix > 0) {
       if (fabs(pow(l2err[0] / l2err_new[0], 1.0 / (order - 0.0))  - hR / hR_new) > 5.e-3) {
         fprintf(stderr, "B_R interpolation did not converge with order %f\n", order);
-        fprintf(stderr, "l2err[0] =%le, l2err_new[0] = %le", l2err[0], l2err_new[0]);
+        fprintf(stderr, "l2err[0] =%le, l2err_new[0] = %le\n", l2err[0], l2err_new[0]);
         hflux_kokkos_finalize();
         return 1;
       }
