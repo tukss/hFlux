@@ -66,7 +66,7 @@ void hflux_field_eval(
     const double* t_mesh,
     double* mesh_value) {
 
-  const auto pFi = *static_cast<FieldInterpolation<m>*>(fi);
+  const auto pFi = static_cast<FieldInterpolation<m>*>(fi);
   using MeshView = Kokkos::View<const double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using MeshValueView = Kokkos::View<double*****, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
@@ -81,7 +81,7 @@ void hflux_field_eval(
   auto Z = Kokkos::create_mirror_view_and_copy(DevMemSpace{}, Z_h);
   auto t = Kokkos::create_mirror_view_and_copy(DevMemSpace{}, t_h);
 
-  MeshValueView B_h(mesh_value, N, pFi.nfields, pFi.ndims, pFi.nphi_data, pFi.nt);
+  MeshValueView B_h(mesh_value, N, pFi->nfields, pFi->ndims, pFi->nphi_data, pFi->nt);
   auto B = Kokkos::create_mirror_view_and_copy(DevMemSpace{}, B_h);
 
   Kokkos::fence();
@@ -89,7 +89,7 @@ void hflux_field_eval(
   KOKKOS_LAMBDA(int i){
     auto sbv = Kokkos::subview(B,
              i, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-    pFi(sbv, {0.0, 0.0, R(i), phi(i), Z(i)});
+    (*pFi)(sbv, {0.0, 0.0, R(i), phi(i), Z(i)});
   });
 
   Kokkos::fence();
