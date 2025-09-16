@@ -5,7 +5,7 @@
 #include "FiniteDifferenceWeights.hpp"
 #include "common.hpp"
 
-using ExecSpace = Kokkos::DefaultExecutionSpace; 
+using ExecSpace = Kokkos::DefaultExecutionSpace;
 template<int m, class ViewType>
 KOKKOS_INLINE_FUNCTION
 void cleanDivergence(ViewType hermite_data, const double hR, const double hZ) {

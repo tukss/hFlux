@@ -30,7 +30,7 @@ function(add_hFlux_test test_name)
   add_executable(${test_name} ${PT_SRCS})
 
   # 2) Add include directories and link hflux library
-  target_link_libraries(${test_name} PRIVATE hflux::hflux)
+  target_link_libraries(${test_name} PRIVATE hflux::hflux m)
 
   # 3) C++20
   target_compile_features(${test_name} PRIVATE cxx_std_20)
